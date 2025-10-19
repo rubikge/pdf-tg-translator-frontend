@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
+import TranslationPopup from './TranslationPopup';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -26,6 +27,12 @@ export default function PdfViewer() {
     return saved ? parseFloat(saved) : 1.0;
   });
   const [error, setError] = useState(null);
+  
+  // Translation popup states
+  const [selectedText, setSelectedText] = useState('');
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const [showPopup, setShowPopup] = useState(false);
+  const selectionTimeoutRef = useRef(null);
 
   // Load default PDF on mount
   useEffect(() => {
@@ -43,6 +50,52 @@ export default function PdfViewer() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.PAGE_NUMBER, pageNumber.toString());
   }, [pageNumber]);
+
+  // Handle text selection in PDF
+  useEffect(() => {
+    const handleTextSelection = () => {
+      // Clear any existing timeout
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+      }
+
+      // Wait a moment to ensure selection is complete
+      selectionTimeoutRef.current = setTimeout(() => {
+        const selection = window.getSelection();
+        const text = selection?.toString().trim();
+
+        if (text && text.length > 0) {
+          // Limit to first 10 words
+          const words = text.split(/\s+/);
+          const limitedText = words.slice(0, 10).join(' ');
+
+          // Get selection position
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+
+          setSelectedText(limitedText);
+          setPopupPosition({
+            x: rect.left + rect.width / 2,
+            y: rect.top - 10,
+          });
+          setShowPopup(true);
+        } else {
+          setShowPopup(false);
+        }
+      }, 500); // Show popup after 500ms delay
+    };
+
+    // Listen for mouseup events (when user finishes selection)
+    document.addEventListener('mouseup', handleTextSelection);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('mouseup', handleTextSelection);
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const onFileChange = (event) => {
     const selectedFile = event.target.files?.[0];
@@ -208,6 +261,14 @@ export default function PdfViewer() {
           <p className="text-sm mt-2">The document will be displayed here</p>
         </div>
       )}
+
+      {/* Translation Popup */}
+      <TranslationPopup
+        selectedText={selectedText}
+        position={popupPosition}
+        onClose={() => setShowPopup(false)}
+        show={showPopup}
+      />
     </div>
   );
 }

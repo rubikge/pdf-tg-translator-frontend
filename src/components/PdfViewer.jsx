@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -6,12 +6,43 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+// LocalStorage keys
+const STORAGE_KEYS = {
+  SCALE: 'pdfViewer_scale',
+  PAGE_NUMBER: 'pdfViewer_pageNumber',
+  FILE_PATH: 'pdfViewer_filePath',
+};
+
 export default function PdfViewer() {
+  // Load saved settings from localStorage or use defaults
   const [file, setFile] = useState(null);
   const [numPages, setNumPages] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.0);
+  const [pageNumber, setPageNumber] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.PAGE_NUMBER);
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [scale, setScale] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.SCALE);
+    return saved ? parseFloat(saved) : 1.0;
+  });
   const [error, setError] = useState(null);
+
+  // Load default PDF on mount
+  useEffect(() => {
+    const savedFilePath = localStorage.getItem(STORAGE_KEYS.FILE_PATH);
+    const defaultPdfPath = savedFilePath || '/C1_Lois_Lowry_The_Giver_Messenger.pdf';
+    setFile(defaultPdfPath);
+  }, []);
+
+  // Save scale to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SCALE, scale.toString());
+  }, [scale]);
+
+  // Save pageNumber to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.PAGE_NUMBER, pageNumber.toString());
+  }, [pageNumber]);
 
   const onFileChange = (event) => {
     const selectedFile = event.target.files?.[0];
@@ -19,6 +50,8 @@ export default function PdfViewer() {
       setFile(selectedFile);
       setError(null);
       setPageNumber(1);
+      // Clear saved file path as user selected a local file
+      localStorage.removeItem(STORAGE_KEYS.FILE_PATH);
     } else {
       setError('Please select a valid PDF file');
       setFile(null);
@@ -27,7 +60,17 @@ export default function PdfViewer() {
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
-    setPageNumber(1);
+    // Don't reset pageNumber, keep the current/saved page
+    // But validate it's within bounds
+    setPageNumber((prevPage) => {
+      const validPage = Math.min(Math.max(prevPage, 1), numPages);
+      return validPage;
+    });
+    
+    // Save file path if it's a string (URL)
+    if (typeof file === 'string') {
+      localStorage.setItem(STORAGE_KEYS.FILE_PATH, file);
+    }
   };
 
   const onDocumentLoadError = (error) => {

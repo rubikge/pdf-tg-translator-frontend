@@ -10,6 +10,7 @@ export default function PdfViewer() {
   const [file, setFile] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
+  const [scale, setScale] = useState(1.0);
   const [error, setError] = useState(null);
 
   const onFileChange = (event) => {
@@ -40,6 +41,18 @@ export default function PdfViewer() {
 
   const goToNextPage = () => {
     setPageNumber((prev) => Math.min(prev + 1, numPages || 1));
+  };
+
+  const zoomIn = () => {
+    setScale((prev) => Math.min(prev + 0.2, 3.0));
+  };
+
+  const zoomOut = () => {
+    setScale((prev) => Math.max(prev - 0.2, 0.5));
+  };
+
+  const resetZoom = () => {
+    setScale(1.0);
   };
 
   return (
@@ -73,29 +86,59 @@ export default function PdfViewer() {
         <div className="flex flex-col items-center">
           {/* Navigation controls */}
           {numPages && (
-            <div className="mb-4 flex items-center gap-4 bg-gray-100 p-3 rounded-lg">
-              <button
-                onClick={goToPrevPage}
-                disabled={pageNumber <= 1}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              >
-                Previous
-              </button>
-              <span className="text-gray-700 font-medium">
-                Page {pageNumber} of {numPages}
-              </span>
-              <button
-                onClick={goToNextPage}
-                disabled={pageNumber >= numPages}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              >
-                Next
-              </button>
+            <div className="mb-4 flex flex-col sm:flex-row items-center gap-3">
+              {/* Page navigation */}
+              <div className="flex items-center gap-4 bg-gray-100 p-3 rounded-lg">
+                <button
+                  onClick={goToPrevPage}
+                  disabled={pageNumber <= 1}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+                <span className="text-gray-700 font-medium">
+                  Page {pageNumber} of {numPages}
+                </span>
+                <button
+                  onClick={goToNextPage}
+                  disabled={pageNumber >= numPages}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+
+              {/* Zoom controls */}
+              <div className="flex items-center gap-2 bg-gray-100 p-3 rounded-lg">
+                <button
+                  onClick={zoomOut}
+                  disabled={scale <= 0.5}
+                  className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-lg font-bold"
+                  title="Zoom out"
+                >
+                  −
+                </button>
+                <button
+                  onClick={resetZoom}
+                  className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm"
+                  title="Reset zoom"
+                >
+                  {Math.round(scale * 100)}%
+                </button>
+                <button
+                  onClick={zoomIn}
+                  disabled={scale >= 3.0}
+                  className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-lg font-bold"
+                  title="Zoom in"
+                >
+                  +
+                </button>
+              </div>
             </div>
           )}
 
           {/* PDF Document viewer */}
-          <div className="border border-gray-300 shadow-lg">
+          <div className="border border-gray-300 shadow-lg overflow-auto max-w-full">
             <Document
               file={file}
               onLoadSuccess={onDocumentLoadSuccess}
@@ -106,9 +149,9 @@ export default function PdfViewer() {
             >
               <Page
                 pageNumber={pageNumber}
+                scale={scale}
                 renderTextLayer={true}
                 renderAnnotationLayer={true}
-                className="max-w-full"
               />
             </Document>
           </div>

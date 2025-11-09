@@ -4,7 +4,7 @@ import { validateTranslationRequest, validateTranslationResponse } from '../type
  * API client for translation service
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Custom error class for translation API errors

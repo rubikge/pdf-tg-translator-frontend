@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3003';
 
 /**
- * Custom hook for translation functionality using Gemini API
- * Translates text from Russian to English
+ * Custom hook for translation functionality using backend API
+ * Automatically translates text and adds to Anki
  * 
  * @param {string} text - Text to translate
  * @param {Object} options - Translation options
@@ -14,50 +15,56 @@ export function useTranslation(text, { enabled = true } = {}) {
   const [translation, setTranslation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [ankiStatus, setAnkiStatus] = useState(null);
 
   // Reset state when text changes
   useEffect(() => {
     setTranslation('');
     setError(null);
+    setAnkiStatus(null);
   }, [text]);
 
-  // Translate function using Gemini API
+  // Translate function using backend API
   const translate = useCallback(async () => {
     if (!text || text.trim().length === 0) {
       return;
     }
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      setError('GEMINI_API_KEY is not configured');
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
+    setAnkiStatus(null);
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+      const response = await fetch(`${API_URL}/api/processTranslation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: text.trim() }),
+      });
 
-      const prompt = `Translate the following English text to Russian. Return only the translation without any explanations or additional text:\n\n${text.trim()}`;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
       
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const translatedText = response.text();
-
-      setTranslation(translatedText.trim());
+      setTranslation(data.translation);
+      
+      // Set Anki status (non-blocking)
+      if (data.ankiStatus === 'added') {
+        setAnkiStatus({ success: true, noteId: data.ankiNoteId });
+      } else if (data.ankiError) {
+        setAnkiStatus({ success: false, error: data.ankiError });
+      }
     } catch (err) {
       console.error('Translation error:', err);
       
       // Format error message
       let errorMessage = 'Translation failed';
       if (err.message) {
-        if (err.message.includes('API key')) {
-          errorMessage = 'Invalid API key';
-        } else if (err.message.includes('quota')) {
-          errorMessage = 'API quota exceeded';
-        } else if (err.message.includes('network')) {
+        if (err.message.includes('fetch') || err.message.includes('network')) {
           errorMessage = 'Cannot connect to translation service';
         } else {
           errorMessage = err.message;
@@ -87,12 +94,14 @@ export function useTranslation(text, { enabled = true } = {}) {
     setTranslation('');
     setError(null);
     setIsLoading(false);
+    setAnkiStatus(null);
   }, []);
 
   return {
     translation,
     isLoading,
     error,
+    ankiStatus,
     translate,
     retry,
     reset,

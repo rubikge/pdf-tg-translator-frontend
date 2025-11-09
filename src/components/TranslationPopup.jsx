@@ -6,8 +6,8 @@ export default function TranslationPopup({ selectedText, position, onClose, show
   const [sourceLang, setSourceLang] = useState('en');
   const [targetLang, setTargetLang] = useState('ru');
 
-  // Use translation hook
-  const { translation, isLoading, error, reset } = useTranslation(selectedText, {
+  // Use translation hook (now includes automatic Anki integration)
+  const { translation, isLoading, error, ankiStatus, reset } = useTranslation(selectedText, {
     sourceLang,
     targetLang,
     enabled: show,
@@ -122,8 +122,53 @@ export default function TranslationPopup({ selectedText, position, onClose, show
         )}
         
         {!isLoading && !error && translation && (
-          <div className="text-gray-800 text-sm leading-relaxed">
-            {translation}
+          <div>
+            <div className="text-gray-800 text-sm leading-relaxed">
+              {translation}
+            </div>
+            
+            {/* Anki status indicator */}
+            {ankiStatus && (
+              <div className="mt-2 flex items-center gap-1 text-xs">
+                {ankiStatus.success ? (
+                  <>
+                    <svg
+                      className="w-3 h-3 text-green-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    <span className="text-green-600">Added to Anki</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-3 h-3 text-yellow-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    <span className="text-yellow-600" title={ankiStatus.error}>
+                      Translation saved (Anki unavailable)
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
         

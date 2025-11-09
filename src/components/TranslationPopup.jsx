@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
+import { hapticFeedback, isTelegramEnvironment } from '../telegram/telegramApp';
 
 export default function TranslationPopup({ selectedText, position, onClose, show }) {
   const popupRef = useRef(null);
   const [sourceLang, setSourceLang] = useState('en');
   const [targetLang, setTargetLang] = useState('ru');
+  const isTelegram = isTelegramEnvironment();
 
   // Use translation hook (now includes automatic Anki integration)
   const { translation, isLoading, error, ankiStatus, reset } = useTranslation(selectedText, {
@@ -12,6 +14,13 @@ export default function TranslationPopup({ selectedText, position, onClose, show
     targetLang,
     enabled: show,
   });
+  
+  // Haptic feedback on show
+  useEffect(() => {
+    if (show && isTelegram) {
+      hapticFeedback('impact', 'light');
+    }
+  }, [show, isTelegram]);
 
   // Handle click outside to close popup
   useEffect(() => {

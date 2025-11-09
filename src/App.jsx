@@ -47,45 +47,44 @@ function App() {
     }
   }, [isDark]);
   
-  // Dynamic background color based on theme
-  const bgColor = isDark ? 'bg-gray-900' : 'bg-gray-50';
-  const textColor = isDark ? 'text-gray-100' : 'text-gray-800';
-  const subtextColor = isDark ? 'text-gray-400' : 'text-gray-600';
+  // Dynamic styles based on Telegram theme or default
+  const bgColor = themeParams?.bg_color || (isDark ? '#1a1a1a' : '#ffffff');
+  const textColor = themeParams?.text_color || (isDark ? '#ffffff' : '#000000');
+  const secondaryBgColor = themeParams?.secondary_bg_color || (isDark ? '#2a2a2a' : '#f4f4f5');
   
   return (
-    <div className={`min-h-screen ${bgColor}`}>
-      <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-8">
-          <h1 className={`text-4xl font-bold ${textColor} mb-2`}>
+    <div 
+      className="min-h-screen"
+      style={{ 
+        backgroundColor: bgColor,
+        color: textColor
+      }}
+    >
+      {/* Compact header - only show in browser mode */}
+      {!isTelegram && (
+        <div className="py-3 px-4 border-b" style={{ borderColor: secondaryBgColor }}>
+          <h1 className="text-xl font-semibold text-center">
             PDF Translator
           </h1>
-          <p className={subtextColor}>
-            {isTelegram ? (
-              <>
-                📱 Telegram Mini App Mode
-                {telegramUser && (
-                  <span className="ml-2 text-sm">
-                    • {telegramUser.first_name}
-                  </span>
-                )}
-              </>
-            ) : (
-              <>
-                🌐 Browser Mode
-                {isTelegramSDKLoaded() && (
-                  <span className="ml-2 text-xs opacity-70">
-                    (SDK loaded, but no Telegram data)
-                  </span>
-                )}
-              </>
+          <p className="text-xs text-center opacity-60 mt-1">
+            🌐 Browser Mode
+            {isTelegramSDKLoaded() && (
+              <span className="ml-1">(SDK loaded)</span>
             )}
           </p>
-        </header>
-        
-        <main>
-          <PdfViewer />
-        </main>
-      </div>
+        </div>
+      )}
+      
+      {/* Telegram mode - minimal or no header */}
+      {isTelegram && telegramUser && (
+        <div className="py-2 px-4 text-xs text-center opacity-60">
+          Welcome, {telegramUser.first_name}! 👋
+        </div>
+      )}
+      
+      <main className={isTelegram ? 'pt-0' : 'pt-2'}>
+        <PdfViewer isTelegram={isTelegram} themeParams={themeParams} isDark={isDark} />
+      </main>
     </div>
   )
 }

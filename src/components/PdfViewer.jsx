@@ -3,6 +3,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import TranslationPopup from './TranslationPopup';
+import { hapticFeedback } from '../telegram/telegramApp';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -14,7 +15,7 @@ const STORAGE_KEYS = {
   FILE_PATH: 'pdfViewer_filePath',
 };
 
-export default function PdfViewer() {
+export default function PdfViewer({ isTelegram, themeParams, isDark }) {
   // Load saved settings from localStorage or use defaults
   const [file, setFile] = useState(null);
   const [numPages, setNumPages] = useState(null);
@@ -132,32 +133,48 @@ export default function PdfViewer() {
   };
 
   const goToPrevPage = () => {
+    if (isTelegram) hapticFeedback('impact', 'light');
     setPageNumber((prev) => Math.max(prev - 1, 1));
   };
 
   const goToNextPage = () => {
+    if (isTelegram) hapticFeedback('impact', 'light');
     setPageNumber((prev) => Math.min(prev + 1, numPages || 1));
   };
 
   const zoomIn = () => {
+    if (isTelegram) hapticFeedback('impact', 'light');
     setScale((prev) => Math.min(prev + 0.2, 3.0));
   };
 
   const zoomOut = () => {
+    if (isTelegram) hapticFeedback('impact', 'light');
     setScale((prev) => Math.max(prev - 0.2, 0.5));
   };
 
   const resetZoom = () => {
+    if (isTelegram) hapticFeedback('selection');
     setScale(1.0);
   };
 
+  // Theme-aware colors
+  const buttonBg = themeParams?.button_color || '#3b82f6';
+  const buttonText = themeParams?.button_text_color || '#ffffff';
+  const secondaryBg = themeParams?.secondary_bg_color || (isDark ? '#2a2a2a' : '#f4f4f5');
+  const hintColor = themeParams?.hint_color || (isDark ? '#999999' : '#666666');
+
   return (
-    <div className="flex flex-col items-center w-full">
+    <div className={`flex flex-col items-center w-full ${isTelegram ? 'px-2 py-2' : 'px-4 py-4'}`}>
       {/* File input */}
-      <div className="mb-6">
+      <div className={isTelegram ? 'mb-3' : 'mb-6'}>
         <label
           htmlFor="pdf-upload"
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-colors inline-block"
+          className="px-6 py-3 rounded-lg cursor-pointer transition-colors inline-block font-medium"
+          style={{
+            backgroundColor: buttonBg,
+            color: buttonText
+          }}
+          onClick={() => isTelegram && hapticFeedback('impact', 'medium')}
         >
           Open PDF
         </label>
@@ -182,41 +199,63 @@ export default function PdfViewer() {
         <div className="flex flex-col items-center">
           {/* Navigation controls */}
           {numPages && (
-            <div className="mb-4 flex flex-col sm:flex-row items-center gap-3">
+            <div className={`flex flex-col sm:flex-row items-center ${isTelegram ? 'gap-2 mb-3' : 'gap-3 mb-4'}`}>
               {/* Page navigation */}
-              <div className="flex items-center gap-4 bg-gray-100 p-3 rounded-lg">
+              <div 
+                className={`flex items-center rounded-lg ${isTelegram ? 'gap-2 p-2' : 'gap-4 p-3'}`}
+                style={{ backgroundColor: secondaryBg }}
+              >
                 <button
                   onClick={goToPrevPage}
                   disabled={pageNumber <= 1}
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className={`${isTelegram ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'} rounded font-medium transition-opacity disabled:opacity-30 disabled:cursor-not-allowed`}
+                  style={{
+                    backgroundColor: buttonBg,
+                    color: buttonText
+                  }}
                 >
                   Previous
                 </button>
-                <span className="text-gray-700 font-medium">
+                <span className={`font-medium ${isTelegram ? 'text-sm' : ''}`} style={{ color: hintColor }}>
                   Page {pageNumber} of {numPages}
                 </span>
                 <button
                   onClick={goToNextPage}
                   disabled={pageNumber >= numPages}
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className={`${isTelegram ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'} rounded font-medium transition-opacity disabled:opacity-30 disabled:cursor-not-allowed`}
+                  style={{
+                    backgroundColor: buttonBg,
+                    color: buttonText
+                  }}
                 >
                   Next
                 </button>
               </div>
 
               {/* Zoom controls */}
-              <div className="flex items-center gap-2 bg-gray-100 p-3 rounded-lg">
+              <div 
+                className={`flex items-center rounded-lg ${isTelegram ? 'gap-2 p-2' : 'gap-2 p-3'}`}
+                style={{ backgroundColor: secondaryBg }}
+              >
                 <button
                   onClick={zoomOut}
                   disabled={scale <= 0.5}
-                  className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-lg font-bold"
+                  className={`${isTelegram ? 'px-2.5 py-1.5' : 'px-3 py-2'} rounded transition-opacity disabled:opacity-30 disabled:cursor-not-allowed text-lg font-bold`}
+                  style={{
+                    backgroundColor: buttonBg,
+                    color: buttonText
+                  }}
                   title="Zoom out"
                 >
                   −
                 </button>
                 <button
                   onClick={resetZoom}
-                  className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm"
+                  className={`${isTelegram ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} rounded transition-opacity`}
+                  style={{
+                    backgroundColor: secondaryBg,
+                    color: hintColor
+                  }}
                   title="Reset zoom"
                 >
                   {Math.round(scale * 100)}%
@@ -224,7 +263,11 @@ export default function PdfViewer() {
                 <button
                   onClick={zoomIn}
                   disabled={scale >= 3.0}
-                  className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-lg font-bold"
+                  className={`${isTelegram ? 'px-2.5 py-1.5' : 'px-3 py-2'} rounded transition-opacity disabled:opacity-30 disabled:cursor-not-allowed text-lg font-bold`}
+                  style={{
+                    backgroundColor: buttonBg,
+                    color: buttonText
+                  }}
                   title="Zoom in"
                 >
                   +

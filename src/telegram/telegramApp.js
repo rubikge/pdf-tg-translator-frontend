@@ -53,9 +53,25 @@ export function getTelegramApp() {
 
 /**
  * Check if running inside Telegram
+ * Returns true only if actually running in Telegram with valid init data
  * @returns {boolean}
  */
 export function isTelegramEnvironment() {
+  if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
+    return false;
+  }
+  
+  // Check if we have actual init data from Telegram
+  // In browser mode, initData will be empty string
+  const webApp = window.Telegram.WebApp;
+  return !!(webApp.initData && webApp.initData.length > 0);
+}
+
+/**
+ * Check if Telegram WebApp SDK is loaded (but may be browser mode)
+ * @returns {boolean}
+ */
+export function isTelegramSDKLoaded() {
   return typeof window !== 'undefined' && !!window.Telegram?.WebApp;
 }
 

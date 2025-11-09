@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import PdfViewer from './components/PdfViewer'
 import { 
   initTelegramApp, 
   isTelegramEnvironment,
+  isTelegramSDKLoaded,
   getTelegramUser,
   setHeaderColor,
   setBackgroundColor
@@ -11,14 +12,21 @@ import { useTelegramTheme } from './hooks/useTelegramTheme';
 
 function App() {
   const { colorScheme, isDark, themeParams } = useTelegramTheme();
+  const [isTelegram, setIsTelegram] = useState(false);
+  const [telegramUser, setTelegramUser] = useState(null);
   
   useEffect(() => {
-    // Initialize Telegram WebApp
-    if (isTelegramEnvironment()) {
+    // Check if we're in real Telegram environment
+    const isRealTelegram = isTelegramEnvironment();
+    setIsTelegram(isRealTelegram);
+    
+    // Initialize Telegram WebApp if available
+    if (isTelegramSDKLoaded()) {
       const initialized = initTelegramApp();
       
-      if (initialized) {
+      if (initialized && isRealTelegram) {
         const user = getTelegramUser();
+        setTelegramUser(user);
         console.log('Telegram user:', user);
         
         // Set colors based on Telegram theme
@@ -52,10 +60,25 @@ function App() {
             PDF Translator
           </h1>
           <p className={subtextColor}>
-            {isTelegramEnvironment() 
-              ? '📱 Telegram Mini App Mode' 
-              : '🌐 Browser Mode'
-            }
+            {isTelegram ? (
+              <>
+                📱 Telegram Mini App Mode
+                {telegramUser && (
+                  <span className="ml-2 text-sm">
+                    • {telegramUser.first_name}
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                🌐 Browser Mode
+                {isTelegramSDKLoaded() && (
+                  <span className="ml-2 text-xs opacity-70">
+                    (SDK loaded, but no Telegram data)
+                  </span>
+                )}
+              </>
+            )}
           </p>
         </header>
         

@@ -1,4 +1,5 @@
 import { validateTranslationRequest, validateTranslationResponse } from '../types/translation';
+import { getTelegramInitData } from '../telegram/telegramApp';
 
 /**
  * API client for translation service
@@ -30,12 +31,21 @@ export async function translateText(request) {
     // Validate request data
     const validatedRequest = validateTranslationRequest(request);
 
+    // Prepare headers
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add Telegram init data if available
+    const initData = getTelegramInitData();
+    if (initData) {
+      headers['X-Telegram-Init-Data'] = initData;
+    }
+
     // Make API request
     const response = await fetch(`${API_URL}/v1/translate`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(validatedRequest),
     });
 

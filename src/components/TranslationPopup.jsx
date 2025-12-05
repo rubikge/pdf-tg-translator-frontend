@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
-import { hapticFeedback, isTelegramEnvironment, getThemeParams } from '../telegram/telegramApp';
+import { hapticFeedback, isTelegramEnvironment } from '../telegram/telegramApp';
 
 export default function TranslationPopup({ selectedText, position, onClose, show }) {
   const popupRef = useRef(null);
   const [sourceLang, setSourceLang] = useState('en');
   const [targetLang, setTargetLang] = useState('ru');
-  const [adjustedPosition, setAdjustedPosition] = useState(position);
   const isTelegram = isTelegramEnvironment();
-  const themeParams = getThemeParams();
 
   // Use translation hook (now includes automatic Anki integration)
   const { translation, isLoading, error, ankiStatus, reset } = useTranslation(selectedText, {
@@ -23,39 +21,6 @@ export default function TranslationPopup({ selectedText, position, onClose, show
       hapticFeedback('impact', 'light');
     }
   }, [show, isTelegram]);
-
-  // Adjust popup position to keep it on screen (especially on mobile)
-  useEffect(() => {
-    if (!show || !popupRef.current) return;
-
-    const popup = popupRef.current;
-    const rect = popup.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    let newX = position.x;
-    let newY = position.y;
-    
-    // Horizontal adjustment
-    if (rect.right > viewportWidth - 10) {
-      newX = viewportWidth - rect.width / 2 - 10;
-    }
-    if (rect.left < 10) {
-      newX = rect.width / 2 + 10;
-    }
-    
-    // Vertical adjustment - if popup goes off top, show below selection
-    if (rect.top < 10) {
-      newY = position.y + 60; // Show below instead of above
-    }
-    
-    // If goes off bottom, show above
-    if (rect.bottom > viewportHeight - 10) {
-      newY = position.y;
-    }
-    
-    setAdjustedPosition({ x: newX, y: newY });
-  }, [show, position]);
 
   // Handle click outside to close popup
   useEffect(() => {
@@ -88,62 +53,33 @@ export default function TranslationPopup({ selectedText, position, onClose, show
     return null;
   }
 
-  // Theme-aware colors
-  const bgColor = themeParams?.bg_color || '#ffffff';
-  const textColor = themeParams?.text_color || '#000000';
-  const secondaryBg = themeParams?.secondary_bg_color || '#f4f4f5';
-  const hintColor = themeParams?.hint_color || '#666666';
-  const linkColor = themeParams?.link_color || '#3b82f6';
-  const isDark = themeParams?.bg_color ? 
-    parseInt(themeParams.bg_color.slice(1), 16) < 0x808080 : false;
-
-  // Popup styling
-  const popupStyle = {
-    left: `${adjustedPosition.x}px`,
-    top: `${adjustedPosition.y}px`,
-    transform: 'translate(-50%, -100%)',
-    backgroundColor: bgColor,
-    color: textColor,
-    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-  };
-
   return (
     <div
       ref={popupRef}
       data-translation-popup
-      className="fixed rounded-xl shadow-2xl border p-3 z-50 w-[90vw] max-w-[380px] sm:w-auto sm:min-w-[320px]"
-      style={popupStyle}
+      className="fixed bg-white rounded-lg shadow-2xl border border-gray-200 p-4 z-50 min-w-[300px] max-w-[400px]"
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        transform: 'translate(-50%, -100%)',
+      }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Close button for better mobile UX */}
-      <button
-        onClick={onClose}
-        className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-opacity-10 hover:bg-gray-500 transition-colors"
-        style={{ color: hintColor }}
-        aria-label="Close"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-
       {/* Selected text display */}
-      <div className="mb-3 pr-6">
-        <div className="text-base font-semibold mb-1.5 break-words leading-snug">
+      <div className="mb-4">
+        <div className="text-lg font-semibold text-gray-800 mb-2 break-words">
           {selectedText}
         </div>
         
         {/* Placeholder for pronunciation and audio */}
-        <div className="flex items-center gap-2 text-xs" style={{ color: hintColor }}>
+        <div className="flex items-center gap-2 text-sm text-gray-500">
           <span className="italic">noun</span>
           <button
-            className="p-1 rounded transition-colors hover:opacity-70"
-            style={{ color: linkColor }}
+            className="p-1 hover:bg-gray-100 rounded transition-colors"
             title="Listen"
-            aria-label="Listen pronunciation"
           >
             <svg
-              className="w-3.5 h-3.5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -156,14 +92,14 @@ export default function TranslationPopup({ selectedText, position, onClose, show
               />
             </svg>
           </button>
-          <span className="ml-1">🇺🇸</span>
+          <span className="ml-2">🇺🇸</span>
         </div>
       </div>
 
       {/* Translation area */}
-      <div className="border-t pt-3" style={{ borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }}>
+      <div className="border-t border-gray-200 pt-3">
         {isLoading && (
-          <div className="flex items-center gap-2 text-sm" style={{ color: hintColor }}>
+          <div className="flex items-center gap-2 text-gray-500 text-sm">
             <svg
               className="animate-spin h-4 w-4"
               xmlns="http://www.w3.org/2000/svg"
@@ -196,7 +132,7 @@ export default function TranslationPopup({ selectedText, position, onClose, show
         
         {!isLoading && !error && translation && (
           <div>
-            <div className="text-sm leading-relaxed" style={{ color: textColor }}>
+            <div className="text-gray-800 text-sm leading-relaxed">
               {translation}
             </div>
             
@@ -246,7 +182,7 @@ export default function TranslationPopup({ selectedText, position, onClose, show
         )}
         
         {!isLoading && !error && !translation && (
-          <div className="text-sm italic" style={{ color: hintColor }}>
+          <div className="text-gray-400 text-sm italic">
             Translation will appear here...
           </div>
         )}

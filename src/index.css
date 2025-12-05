@@ -2,19 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optimize for Telegram mini app */
-* {
-  box-sizing: border-box;
-}
-
-html {
-  /* Prevent elastic scroll effect on iOS */
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-}
-
 body {
   margin: 0;
   padding: 0;
@@ -23,98 +10,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
-  /* Prevent overscroll bounce effect */
-  overscroll-behavior: none;
-  
-  /* Optimize for mobile touch */
-  -webkit-tap-highlight-color: transparent;
-  touch-action: pan-x pan-y;
-  
-  /* Full height viewport */
-  width: 100%;
-  height: 100vh;
-  height: 100dvh; /* Dynamic viewport height for mobile browsers */
-  overflow: hidden;
-  position: fixed;
 }
 
 #root {
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: none;
-}
-
-/* Optimize scrollbars for mobile */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.3);
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(128, 128, 128, 0.5);
-}
-
-/* Better text selection for translation */
-::selection {
-  background-color: rgba(59, 130, 246, 0.3);
-  color: inherit;
-}
-
-::-moz-selection {
-  background-color: rgba(59, 130, 246, 0.3);
-  color: inherit;
-}
-
-/* Prevent text selection on UI elements */
-button, 
-.no-select {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-/* Better tap targets for mobile */
-button,
-a,
-input[type="file"] + label {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-/* Improve button active state */
-button:active {
-  transform: scale(0.98);
-  transition: transform 0.1s ease;
-}
-
-/* PDF viewer optimizations */
-.react-pdf__Page {
-  max-width: 100%;
-}
-
-.react-pdf__Page__canvas {
-  max-width: 100%;
-  height: auto !important;
-}
-
-.react-pdf__Page__textContent {
-  max-width: 100%;
-}
-
-.react-pdf__Page__annotations {
-  max-width: 100%;
+  min-height: 100vh;
 }
 

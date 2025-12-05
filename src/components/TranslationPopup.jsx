@@ -64,6 +64,7 @@ export default function TranslationPopup({ selectedText, position, onClose, show
         transform: 'translate(-50%, -100%)',
       }}
       onClick={(e) => e.stopPropagation()}
+      onContextMenu={(e) => e.stopPropagation()}
     >
       {/* Selected text display */}
       <div className="mb-4">

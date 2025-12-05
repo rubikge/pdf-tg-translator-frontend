@@ -80,18 +80,23 @@ export default function PdfViewer({ isTelegram, themeParams, isDark }) {
             y: rect.top - 10,
           });
           setShowPopup(true);
+
+          // Remove selection to hide native browser menu
+          selection.removeAllRanges();
         } else {
           setShowPopup(false);
         }
       }, 500); // Show popup after 500ms delay
     };
 
-    // Listen for mouseup events (when user finishes selection)
+    // Listen for mouseup and touchend events (when user finishes selection)
     document.addEventListener('mouseup', handleTextSelection);
+    document.addEventListener('touchend', handleTextSelection);
 
     // Cleanup
     return () => {
       document.removeEventListener('mouseup', handleTextSelection);
+      document.removeEventListener('touchend', handleTextSelection);
       if (selectionTimeoutRef.current) {
         clearTimeout(selectionTimeoutRef.current);
       }
@@ -164,7 +169,11 @@ export default function PdfViewer({ isTelegram, themeParams, isDark }) {
   const hintColor = themeParams?.hint_color || (isDark ? '#999999' : '#666666');
 
   return (
-    <div className={`flex flex-col items-center w-full ${isTelegram ? 'px-2 py-2' : 'px-4 py-4'}`}>
+    <div 
+      className={`flex flex-col items-center w-full ${isTelegram ? 'px-2 py-2' : 'px-4 py-4'}`}
+      onContextMenu={(e) => e.preventDefault()}
+      style={{ WebkitTouchCallout: 'none' }}
+    >
       {/* File input */}
       <div className={isTelegram ? 'mb-3' : 'mb-6'}>
         <label
